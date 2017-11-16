@@ -1044,6 +1044,22 @@ class WC_Admin_Setup_Wizard {
 	}
 
 	/**
+	 * Is Square country supported
+	 *
+	 * @param string $country_code Country code.
+	 */
+	protected function is_square_supported_country( $country_code ) {
+		$square_supported_countries = array(
+			'US',
+			'CA',
+			'JP',
+			'UK',
+			'AU',
+		);
+		return in_array( $country_code, $square_supported_countries, true );
+	}
+
+	/**
 	 * Helper method to retrieve the current user's email address.
 	 *
 	 * @return string Email address
@@ -1064,6 +1080,8 @@ class WC_Admin_Setup_Wizard {
 		$country    = WC()->countries->get_base_country();
 		$can_stripe = $this->is_stripe_supported_country( $country );
 		$should_display_klarna = $this->is_klarna_supported_country( $country );
+		$should_display_square = $this->is_square_supported_country( $country ) &&
+			$sell_in_person = 'yes' === get_option( 'woocommerce_sell_in_person', 'none_selected' );
 		$user_email = $this->get_current_user_email();
 
 		$stripe_description = '<p>' . sprintf(
@@ -1081,6 +1099,10 @@ class WC_Admin_Setup_Wizard {
 		$klarna_description = '<p>' . sprintf(
 			__( 'Pay directly at the checkout. No credit card numbers, no passwords, no worries. <a href="%s" target="_blank">Learn more about Klarna.</a>.', 'woocommerce' ),
 			'https://woocommerce.com/products/klarna/'
+		) . '</p>';
+		$square_description = '<p>' . sprintf(
+			__( 'Accept Visa, Mastercard, Discover, and American Express all for one low rate, with no surprise fees.', 'woocommerce. <a href="%s" target="_blank">Learn more about Square.</a>.', 'woocommerce' ),
+			'https://woocommerce.com/products/square/'
 		) . '</p>';
 
 		$stripe = array(
@@ -1106,8 +1128,8 @@ class WC_Admin_Setup_Wizard {
 					'required'    => true,
 				),
 			),
-			'enabled' => $can_stripe && ! $should_display_klarna,
-			'featured' => ! $should_display_klarna,
+			'enabled' => $can_stripe && ! ( $should_display_klarna || $should_display_square ),
+			'featured' => ! ( $should_display_klarna || $should_display_square ),
 		);
 		$braintree_paypal = array(
 			'name'        => __( 'PayPal by Braintree', 'woocommerce' ),
@@ -1120,7 +1142,7 @@ class WC_Admin_Setup_Wizard {
 			'image'       => WC()->plugin_url() . '/assets/images/paypal.png',
 			'description' => $paypal_ec_description,
 			'repo-slug'   => 'woocommerce-gateway-paypal-express-checkout',
-			'enabled'     => $should_display_klarna,
+			'enabled'     => $should_display_klarna || $should_display_square,
 		);
 		$paypal = array(
 			'name'        => __( 'PayPal Standard', 'woocommerce' ),
@@ -1144,6 +1166,14 @@ class WC_Admin_Setup_Wizard {
 			'enabled'     => true,
 			'repo-slug'   => 'woocommerce-gateway-klarna',
 		);
+		$square = array(
+			'name'        => __( 'Square', 'woocommerce' ),
+			'description' => $square_description,
+			'image'       => WC()->plugin_url() . '/assets/images/square-white.png',
+			'class'       => 'inverted-logo',
+			'enabled'     => true,
+			'repo-slug'   => 'woocommerce-square',
+		);
 
 		$gateways = array(
 			'stripe'           => $stripe,
@@ -1155,6 +1185,14 @@ class WC_Admin_Setup_Wizard {
 		if ( $should_display_klarna ) {
 			$gateways = array(
 				'klarna'           => $klarna,
+				'ppec_paypal'      => $ppec_paypal,
+				'stripe'           => $stripe,
+			);
+		}
+
+		if ( $should_display_square ) {
+			$gateways = array(
+				'square'           => $square,
 				'ppec_paypal'      => $ppec_paypal,
 				'stripe'           => $stripe,
 			);
