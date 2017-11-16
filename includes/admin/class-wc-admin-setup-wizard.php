@@ -317,6 +317,7 @@ class WC_Admin_Setup_Wizard {
 		$postcode       = WC()->countries->get_base_postcode();
 		$currency       = get_option( 'woocommerce_currency', 'GBP' );
 		$product_type   = get_option( 'woocommerce_product_type', 'both' );
+		$sell_in_person = get_option( 'woocommerce_sell_in_person', 'none_selected' );
 
 		if ( empty( $country ) ) {
 			$user_location = WC_Geolocation::geolocate_ip();
@@ -437,6 +438,25 @@ class WC_Admin_Setup_Wizard {
 				<option value="physical" <?php selected( $product_type, 'physical' ); ?>><?php esc_html_e( 'I plan to sell physical products', 'woocommerce' ); ?></option>
 				<option value="virtual" <?php selected( $product_type, 'virtual' ); ?>><?php esc_html_e( 'I plan to sell digital products', 'woocommerce' ); ?></option>
 			</select>
+
+			<label class="location-prompt" for="selling-in-person">
+				<?php esc_html_e( 'Will you be selling products in person?', 'woocommerce' ); ?>
+			</label>
+			<select
+				id="selling_in_person"
+				name="selling_in_person"
+				required
+				class="wc-enhanced-select dropdown"
+			>
+				<option value="" <?php selected( $sell_in_person, 'none_selected' ); ?> />
+				<option value="no" <?php selected( $sell_in_person, 'no' ); ?>>
+					<?php esc_html_e( 'No, I plan to sell online only', 'woocommerce' ); ?>
+				</option>
+				<option value="yes" <?php selected( $sell_in_person, 'yes' ); ?>>
+					<?php esc_html_e( 'Yes, I plan to sell both online and in person', 'woocommerce' ); ?>
+				</option>
+			</select>
+
 			<?php if ( 'unknown' === get_option( 'woocommerce_allow_tracking', 'unknown' ) ) : ?>
 				<div class="allow-tracking">
 					<input type="checkbox" id="wc_tracker_optin" name="wc_tracker_optin" value="yes" checked />
@@ -463,6 +483,7 @@ class WC_Admin_Setup_Wizard {
 		$postcode       = sanitize_text_field( $_POST['store_postcode'] );
 		$currency_code  = sanitize_text_field( $_POST['currency_code'] );
 		$product_type   = sanitize_text_field( $_POST['product_type'] );
+		$sell_in_person = sanitize_text_field( $_POST['selling_in_person'] );
 		$tracking       = isset( $_POST['wc_tracker_optin'] ) && ( 'yes' === sanitize_text_field( $_POST['wc_tracker_optin'] ) );
 		// @codingStandardsIgnoreEnd
 		update_option( 'woocommerce_store_address', $address );
@@ -472,6 +493,7 @@ class WC_Admin_Setup_Wizard {
 		update_option( 'woocommerce_store_postcode', $postcode );
 		update_option( 'woocommerce_currency', $currency_code );
 		update_option( 'woocommerce_product_type', $product_type );
+		update_option( 'woocommerce_sell_in_person', $sell_in_person );
 
 		$locale_info = include( WC()->plugin_path() . '/i18n/locale-info.php' );
 		$country     = WC()->countries->get_base_country();
